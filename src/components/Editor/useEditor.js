@@ -15,9 +15,14 @@ import uuid from "react-uuid";
 const useEditor = () => {
   const [focusSetter, setFocusSetter] = useState(1);
   const [caretSetter, setCaretSetter] = useState("");
+  const [postAction, setPostAction] = useState("");
+
   const [disableCaretSetter, setDisableCaretSetter] = useState(false);
   const prevState = useRef([]);
-  const state = useRef([{ id: uuid(), html: "Nilesh is a React dev." }]);
+  // const state = useRef([{ id: uuid(), html: "Nilesh is a React dev." }]);
+  const [state, setState] = useState([
+    { id: uuid(), html: "Nilesh is a React dev." },
+  ]);
   const itemsRef = useRef([]);
   const currentItem = useRef("");
   const currentIndex = useRef("");
@@ -27,7 +32,6 @@ const useEditor = () => {
       setDisableCaretSetter(false);
       return;
     }
-
     setCaretPosition(currentItem.current, getCaretIndex(currentItem.current));
   }, [caretSetter]);
 
@@ -40,23 +44,45 @@ const useEditor = () => {
     setCaretPosition(currentItem.current, getCaretIndex(currentItem.current));
   }, [focusSetter]);
 
+  useEffect(() => {
+    if (postAction.action !== "") {
+      switch (postAction.action) {
+        case "merge": {
+          postAction.data.item.focus();
+          setCaretPosition(
+            postAction.data.item,
+            postAction.data.lastChildBeforeMerge,
+            postAction.data.textLengthBeforeMerge
+          );
+
+          break;
+        }
+      }
+    }
+  }, [postAction]);
+
   const addNewBlock = (text = "") => {
-    let newState = [...state.current];
+    let newState = [...state];
+
     newState.splice(currentIndex.current + 1, 0, { id: uuid(), html: text });
-    state.current = newState;
+    setState(newState);
     setFocusSetter(focusSetter + 1);
   };
 
   const handleChange = (value, idx) => {
     var regex = /\S+/g;
+    // console.log(value, idx);
     // var result = value.replace(regex, function (a) {
     //   return "<span>" + a + "</span>";
     // });
     // currentItem.current.innerHTML = result;
     // state.current[idx].html = result;
 
-    state.current[idx].html = value;
-    updateRefs();
+    // state.current[idx].html = value;
+    // updateRefs();
+    let newState = [...state];
+    newState[idx].html = value;
+    setState(newState);
   };
 
   const updateRefs = () => {
@@ -70,29 +96,27 @@ const useEditor = () => {
     currentItem.current = e.target;
     currentIndex.current = idx;
 
-    currentItem.current.innerHTML = [...currentItem.current.childNodes]
-      .map((el) => el.textContent)
-      .join("");
-
-    state.current[currentIndex.current].html = [
-      ...currentItem.current.childNodes,
-    ]
-      .map((el) => el.textContent)
-      .join("");
-
-    updateRefs();
+    // currentItem.current.innerHTML = [...currentItem.current.childNodes]
+    //   .map((el) => el.textContent)
+    //   .join("");
+    // state.current[currentIndex.current].html = [
+    //   ...currentItem.current.childNodes,
+    // ]
+    //   .map((el) => el.textContent)
+    //   .join("");
+    // updateRefs();
   };
 
   const onBlur = () => {
-    let currentText = currentItem.current.textContent;
-    var regex = /\S+/g;
-    var result = currentText.replace(regex, function (a) {
-      return "<span>" + a + "</span>";
-    });
-    currentItem.current.innerHTML = result;
-    state.current[currentIndex.current].html = result;
-    // setDisableCaretSetter(true);
-    updateRefs();
+    // let currentText = currentItem.current.textContent;
+    // var regex = /\S+/g;
+    // var result = currentText.replace(regex, function (a) {
+    //   return "<span>" + a + "</span>";
+    // });
+    // currentItem.current.innerHTML = result;
+    // state.current[currentIndex.current].html = result;
+    // // setDisableCaretSetter(true);
+    // updateRefs();
   };
 
   const onMouseUp = (e) => {
@@ -158,7 +182,7 @@ const useEditor = () => {
 
         handleChange(fullText.substr(0, caretPos), currentIndex.current);
         addNewBlock(splitText);
-        updateRefs();
+        // updateRefs();
 
         break;
       }
@@ -167,35 +191,53 @@ const useEditor = () => {
         if (idx === 0) return;
         let pos = getCaretIndex(currentItem.current);
         if (pos === 0) {
+          e.preventDefault();
           // get its data
-          let currentHtml = state.current[idx].html;
-          let arr = [...state.current];
+          let currentHtml = state[idx].html;
+          let arr = JSON.parse(JSON.stringify(state));
 
           //focus on previous
-          let textLengthBeforeMerge =
-            currentItem.current.previousSibling.textContent.length;
+          let previousSibling = currentItem.current.previousSibling;
+          // let textLengthBeforeMerge = previousSibling.textContent.length;
 
+          let lastChildBeforeMerge =
+            previousSibling.childNodes[previousSibling.childNodes.length - 1];
+
+          let textLengthBeforeMerge = lastChildBeforeMerge
+            ? lastChildBeforeMerge.length
+            : 0;
+
+          // currentItem.current.focus();
+          // setTimeout(() => {
+          //   placeCaretAtEnd(currentItem.current);
+          // }, 0);
+
+          //make previous sibling current
           currentItem.current = currentItem.current.previousSibling;
           currentItem.current.focus();
-          setTimeout(() => {
-            placeCaretAtEnd(currentItem.current);
-          }, 0);
 
           //append html to previous
-          arr[idx - 1].html += currentHtml;
+          let text = arr[idx - 1].html + currentHtml;
+          arr[idx - 1].html = text;
 
-          //delete it
+          //delete the target contenteditable
           arr.splice(idx, 1);
-          state.current = arr;
-          setFocusSetter(focusSetter - 1); //setFocusSetter for items
 
-          //set caret between two merges
-          if (currentItem.current.textContent !== "") {
-            setTimeout(() => {
-              setCaretPosition(currentItem.current, textLengthBeforeMerge);
-            }, 0);
-          }
-          updateRefs();
+          setCaretPosition(
+            currentItem.current,
+            lastChildBeforeMerge,
+            textLengthBeforeMerge
+          );
+
+          setState(arr);
+          // setPostAction({
+          //   action: "merge",
+          //   data: {
+          //     item: currentItem.current,
+          //     lastChildBeforeMerge,
+          //     textLengthBeforeMerge,
+          //   },
+          // });
         }
         break;
       }
@@ -208,6 +250,7 @@ const useEditor = () => {
 
   return {
     state,
+    setState,
     itemsRef,
     eventHandlers: {
       onKeyDown,

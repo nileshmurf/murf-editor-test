@@ -149,8 +149,6 @@
 import React, { useEffect } from "react";
 import Editor from "./components/Editor";
 
-useEffect(() => {}, []);
-
 const App = () => {
   return (
     <div>

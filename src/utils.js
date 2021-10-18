@@ -111,8 +111,28 @@ export const getCaretPosition = (elem) => {
   return [cum_length[1], cum_length[0]];
 };
 
-export const setCaretPosition = (elem, pos, child = null) => {
+// export const setCaretPosition = (elem, pos, child = null) => {
+//   if (!elem?.childNodes?.length) return;
+//   let el = elem;
+//   let nthChild = child
+//     ? child
+//     : el.childNodes.length > 1
+//     ? el.childNodes[el.childNodes.length - 1]
+//     : el.childNodes[0];
+
+//   var range = document.createRange();
+//   var sel = window.getSelection();
+//   range.setStart(nthChild, pos);
+
+//   range.collapse(true);
+//   sel.removeAllRanges();
+//   sel.addRange(range);
+//   el.focus();
+// };
+
+export const setCaretPosition = (elem, child = null, pos) => {
   if (!elem?.childNodes?.length) return;
+
   let el = elem;
   let nthChild = child
     ? child
@@ -122,11 +142,13 @@ export const setCaretPosition = (elem, pos, child = null) => {
 
   var range = document.createRange();
   var sel = window.getSelection();
-  range.setStart(nthChild, nthChild.length);
-
+  range.setStart(nthChild, pos);
   range.collapse(true);
   sel.removeAllRanges();
+  console.log("range", range);
   sel.addRange(range);
+  console.log("range", range);
+
   el.focus();
 };
 

@@ -1,9 +1,12 @@
+import ContentEditable from "react-contenteditable";
+import uuid from "react-uuid";
 import Editable from "../Editable";
 import useEditor from "./useEditor";
 
 function Editor() {
   const {
     state,
+    setState,
     itemsRef,
     eventHandlers: {
       onFocus,
@@ -19,9 +22,9 @@ function Editor() {
   return (
     <>
       <div style={{ margin: "20vh 20vw" }} className="App">
-        {state.current.map((el, idx) => (
+        {state.map((el, idx) => (
           <Editable
-            innerRef={(item) => (itemsRef.current[idx] = item)}
+            // innerRef={(item) => (itemsRef.current[idx] = item)}
             html={el.html}
             key={el.id}
             index={idx}
@@ -40,6 +43,8 @@ function Editor() {
       <button
         onClick={() => {
           console.log(state);
+          // let newState = [...state, { id: uuid(), html: "afjbkkejwbk" }];
+          // setState(newState);
         }}
       >
         click
